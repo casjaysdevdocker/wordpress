@@ -70,7 +70,7 @@ fi
 
 if [ ! -d "/var/lib/mysql/mysql" ]; then
   echo "[i] Initializing mysql database"
-  rm -Rf "/var/lib/mysql/"
+  rm -Rf "/var/lib/mysql/" &>/dev/null
   /usr/bin/mysql_install_db --user=mysql --datadir=/var/lib/mysql
   __mysqld
   __mysql_test
