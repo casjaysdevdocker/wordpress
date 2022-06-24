@@ -21,6 +21,14 @@ else
   chown -R nginx:nginx /usr/html
 fi
 
+if [ ! -d "/var/lib/mysql/mysql" ]; then
+  rm -Rf "/var/lib/mysql/"
+  /usr/bin/mysql_install_db --user=mysql --datadir=/var/lib/mysql
+  mysqld_safe --datadir=/var/lib/mysql &
+  mysqladmin --silent --wait=30 ping || exit 1
+  mysqladmin -u root password "$DB_PASS"
+fi
+
 mkdir -p /usr/logs/php8
 mkdir -p /usr/logs/nginx
 mkdir -p /tmp/nginx
@@ -29,7 +37,7 @@ chown -Rf nginx /tmp/nginx
 chown -Rf mysql:mysql /var/lib/mysql /run/mysqld
 
 /usr/bin/php-fpm &
-mysqld_safe --datadir=/var/lib/mysql &
+mysqladmin --silent --wait=30 ping || mysqld_safe --datadir=/var/lib/mysql &
 
 if [ ! -d "/var/lib/mysql/wordpress" ]; then
   sleep 10
