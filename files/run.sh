@@ -1,12 +1,26 @@
 #!/bin/bash
 
-if [ "$1" = "healthcheck" ]; then
-  curl -q -SIs "http://localhost:80" | grep -qE 'HTTP/[1,2]*' &&
-    ls var/run/php-fpm.sock /var/run/mysqld/mysqld.sock /var/run/nginx/nginx.pid &>/dev/null &&
-    exit 0 || exit 1
-fi
+__url_check() {
+  curl -q -SIs "http://localhost:80" | grep -qE 'HTTP/[1,2]*' && return 0 || return 1
+}
 
-[ -f /run-pre.sh ] && /run-pre.sh
+__file_check() {
+  ls var/run/php-fpm.sock /var/run/mysqld/mysqld.sock /var/run/nginx/nginx.pid &>/dev/null && return 0 || return 1
+}
+
+__mysqld() {
+  __mysql_test || mysqld_safe --datadir=/var/lib/mysql &
+  [[ $? = 0 ]] && sleep 10 && return 0 || exit 1
+}
+
+__mysql_test() {
+  server_db="$(mysqladmin --silent --wait=30 ping &>/dev/null && echo 'running')"
+  [[ "$server_db" = "running" ]] && return 0 || return 1
+}
+
+if [ "$1" = "healthcheck" ]; then
+  __url_check && __file_check && exit 0 || exit 1
+fi
 
 if [ ! -d "/usr/html/wp-admin" ] && [ ! -f "/usr/html/wp-config.php" ]; then
   echo "[i] Installing wordpress..."
@@ -24,8 +38,8 @@ fi
 if [ ! -d "/var/lib/mysql/mysql" ]; then
   rm -Rf "/var/lib/mysql/"
   /usr/bin/mysql_install_db --user=mysql --datadir=/var/lib/mysql
-  mysqld_safe --datadir=/var/lib/mysql &
-  mysqladmin --silent --wait=30 ping || exit 1
+  __mysqld
+  __mysql_test
   mysqladmin -u root password "$DB_PASS"
 fi
 
@@ -37,10 +51,9 @@ chown -Rf nginx /tmp/nginx
 chown -Rf mysql:mysql /var/lib/mysql /run/mysqld
 
 /usr/bin/php-fpm &
-mysqladmin --silent --wait=30 ping || mysqld_safe --datadir=/var/lib/mysql &
+__mysql_test || __mysqld
 
 if [ ! -d "/var/lib/mysql/wordpress" ]; then
-  sleep 10
   mysql -uroot -p$DB_PASS -e "CREATE DATABASE $DB_NAME"
   mysql -uroot -p$DB_PASS -e "GRANT ALL PRIVILEGES ON $DB_NAME.* TO $DB_NAME@localhost IDENTIFIED BY '$DB_PASS'"
 fi
