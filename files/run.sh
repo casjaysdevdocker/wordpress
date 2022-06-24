@@ -37,7 +37,9 @@ fi
 
 if [ -d "/var/lib/wordpress/devel" ]; then
   echo "[i] Initializing plugin development dir"
-  for d in $(ls /var/lib/wordpress/devel); do
+  plugins="$(ls /var/lib/wordpress/devel)"
+  [ -d "/usr/html/wp-content/plugins" ] || mkdir -p "/usr/html/wp-content/plugins"
+  for d in $plugins; do
     ln -sf "/var/lib/wordpress/devel/$d" "/usr/html/wp-content/plugins/$d"
   done
 fi
