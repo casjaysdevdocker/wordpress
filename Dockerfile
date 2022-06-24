@@ -64,7 +64,7 @@ RUN chmod +x /usr/local/bin/entrypoint-wordpress.sh && \
   chown -Rf mysql:mysql /var/lib/mysql /run/mysqld
 
 EXPOSE 80
-VOLUME ["/usr/html", "/var/lib/mysql"]
+VOLUME ["/usr/html", "/var/lib/mysql", "/var/lib/wordpress/devel" ]
 
 HEALTHCHECK CMD ["usr/local/bin/entrypoint-wordpress.sh", "healthcheck"]
 ENTRYPOINT ["/usr/local/bin/entrypoint-wordpress.sh"]
