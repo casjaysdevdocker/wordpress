@@ -35,7 +35,15 @@ else
   chown -R nginx:nginx /usr/html
 fi
 
+if [ -d "/var/lib/wordpress/devel" ]; then
+  echo "[i] Initializing plugin development dir"
+  for d in /var/lib/wordpress/devel/*; do
+    ln -sf "/var/lib/wordpress/devel/$d" "/usr/html/wp-content/plugins/$d"
+  done
+fi
+
 if [ ! -d "/var/lib/mysql/mysql" ]; then
+  echo "[i] Initializing mysql database"
   rm -Rf "/var/lib/mysql/"
   /usr/bin/mysql_install_db --user=mysql --datadir=/var/lib/mysql
   __mysqld
@@ -54,6 +62,7 @@ chown -Rf mysql:mysql /var/lib/mysql /run/mysqld
 __mysql_test || __mysqld
 
 if [ ! -d "/var/lib/mysql/wordpress" ]; then
+  echo "[i] Creating word database"
   mysql -uroot -p$DB_PASS -e "CREATE DATABASE $DB_NAME"
   mysql -uroot -p$DB_PASS -e "GRANT ALL PRIVILEGES ON $DB_NAME.* TO $DB_NAME@localhost IDENTIFIED BY '$DB_PASS'"
 fi
