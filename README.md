@@ -14,7 +14,8 @@ docker run -d \
 -e TZ=${TIMEZONE:-America/New_York} \
 -v $PWD/wordpress/data:/var/lib/mysql \
 -v $PWD/wordpress/config:/usr/html \
--p 80:80 \
+-v $PWD/wordpress/devel:/var/lib/wordpress/devel \
+-p 8081:80 \
 casjaysdev/wordpress:latest
 ```
 
