@@ -8,13 +8,35 @@ __file_check() {
   ls var/run/php-fpm.sock /var/run/mysqld/mysqld.sock /var/run/nginx/nginx.pid &>/dev/null && return 0 || return 1
 }
 
+__phpfpm() {
+  if [ -f "/var/run/php-fpm.sock" ]; then
+    return 0
+  else
+    echo "[i] Starting php-fpm..."
+    /usr/bin/php-fpm &
+    if [[ $? = 0 ]]; then
+      sleep 10
+      return 0
+    else
+      exit 1
+    fi
+  fi
+}
+
 __mysqld() {
-  __mysql_test || mysqld_safe --datadir=/var/lib/mysql &
-  [[ $? = 0 ]] && sleep 10 && return 0 || exit 1
+  if ! __mysql_test; then
+    mysqld_safe --datadir=/var/lib/mysql &
+  fi
+  if [[ $? = 0 ]]; then
+    sleep 5
+    return 0
+  else
+    exit 1
+  fi
 }
 
 __mysql_test() {
-  server_db="$(mysqladmin --silent --wait=30 ping &>/dev/null && echo 'running')"
+  server_db="$(mysqladmin --silent --wait=2 ping &>/dev/null && echo 'running')"
   [[ "$server_db" = "running" ]] && return 0 || return 1
 }
 
@@ -37,11 +59,13 @@ fi
 
 if [ -d "/var/lib/wordpress/devel" ]; then
   echo "[i] Initializing plugin development dir"
-  plugins="$(ls /var/lib/wordpress/devel)"
+  plugins="$(ls /var/lib/wordpress/devel 2>/dev/null || false)"
   [ -d "/usr/html/wp-content/plugins" ] || mkdir -p "/usr/html/wp-content/plugins"
-  for d in $plugins; do
-    ln -sf "/var/lib/wordpress/devel/$d" "/usr/html/wp-content/plugins/$d"
-  done
+  if [ -n "$plugins" ]; then
+    for d in $plugins; do
+      ln -sf "/var/lib/wordpress/devel/$d" "/usr/html/wp-content/plugins/$d"
+    done
+  fi
 fi
 
 if [ ! -d "/var/lib/mysql/mysql" ]; then
@@ -53,18 +77,20 @@ if [ ! -d "/var/lib/mysql/mysql" ]; then
   mysqladmin -u root password "$DB_PASS"
 fi
 
+echo "[i] Creating directories..."
 mkdir -p /usr/logs/php8
 mkdir -p /usr/logs/nginx
 mkdir -p /tmp/nginx
 
+echo "[i] Setting permissions..."
 chown -Rf nginx /tmp/nginx
 chown -Rf mysql:mysql /var/lib/mysql /run/mysqld
 
-/usr/bin/php-fpm &
+echo "[i] Starting mysql database server..."
 __mysql_test || __mysqld
 
 if [ ! -d "/var/lib/mysql/wordpress" ]; then
-  echo "[i] Creating word database"
+  echo "[i] Creating word database..."
   mysql -uroot -p$DB_PASS -e "CREATE DATABASE $DB_NAME"
   mysql -uroot -p$DB_PASS -e "GRANT ALL PRIVILEGES ON $DB_NAME.* TO $DB_NAME@localhost IDENTIFIED BY '$DB_PASS'"
 fi
@@ -74,4 +100,5 @@ fi
 [ -z "$DB_USER" ] && echo "Database user: not set" || echo "Database user: $DB_USER"
 [ -z "$DB_PASS" ] && echo "Database pass: not set" || echo "Database pass: $DB_PASS"
 
+echo "[i] Starting web server..."
 nginx
