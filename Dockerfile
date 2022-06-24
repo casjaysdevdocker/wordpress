@@ -23,7 +23,7 @@ ENV TERM="xterm" \
   DB_HOST="localhost" \
   DB_NAME="wordpress" \
   DB_USER="root"\
-  DB_PASS="wordpress_pass"
+  DB_PASS="password"
 
 RUN apk -U upgrade && \ 
   apk add --no-cache bash curl less vim nginx ca-certificates git tzdata zip \
@@ -49,7 +49,7 @@ RUN /usr/bin/mysql_install_db --user=mysql --datadir=/var/lib/mysql && \
   sed -i "s/nginx:x:100:101:nginx:\/var\/lib\/nginx:\/sbin\/nologin/nginx:x:100:101:nginx:\/usr:\/bin\/bash/g" /etc/passwd- && \
   echo "mysqld_safe --datadir=/var/lib/mysql --port=3306 &" > /tmp/config && \
   echo "mysqladmin --silent --wait=30 ping || exit 1" >> /tmp/config && \
-  echo "mysqladmin -u root password 'wordpress_pass'" >> /tmp/config && \
+  echo "mysqladmin -u root password 'password'" >> /tmp/config && \
   bash /tmp/config && \
   rm -f /tmp/config
 
