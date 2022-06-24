@@ -12,7 +12,6 @@ __phpfpm() {
   if [ -f "/var/run/php-fpm.sock" ]; then
     return 0
   else
-    echo "[i] Starting php-fpm..."
     /usr/bin/php-fpm &
     if [[ $? = 0 ]]; then
       sleep 10
@@ -99,6 +98,9 @@ fi
 [ -z "$DB_NAME" ] && echo "Database name: not set" || echo "Database name: $DB_NAME"
 [ -z "$DB_USER" ] && echo "Database user: not set" || echo "Database user: $DB_USER"
 [ -z "$DB_PASS" ] && echo "Database pass: not set" || echo "Database pass: $DB_PASS"
+
+echo "[i] Starting php-fpm..."
+__phpfpm
 
 echo "[i] Starting web server..."
 nginx
