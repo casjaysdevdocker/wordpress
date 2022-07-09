@@ -25,7 +25,7 @@ casjaysdev/wordpress:latest
 version: "2"
 services:
   wordpress:
-    image: casjaysdev/wordpress
+    image: casjaysdevdocker/wordpress
     container_name: wordpress
     environment:
       - TZ=America/New_York
