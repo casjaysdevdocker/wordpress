@@ -38,8 +38,8 @@ RUN /usr/bin/mysql_install_db --user=mysql --datadir=/var/lib/mysql && \
   bash /tmp/config && \
   rm -f /tmp/config
 
-ADD files/nginx.conf /etc/nginx/
-ADD files/php-fpm.conf /etc/php8/
+ADD ./config/nginx.conf /etc/nginx/
+ADD ./config/php-fpm.conf /etc/php8/
 
 COPY ./bin /usr/local/bin/
 
