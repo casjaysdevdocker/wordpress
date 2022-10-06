@@ -5,10 +5,10 @@ ARG BUILD_DATE \
   PORT=80 
 
 ENV TERM="xterm" \
-  DB_HOST="localhost" \
+  DB_HOST="localhost" \ 
   DB_NAME="wordpress" \
-  DB_USER="root"\
-  DB_PASS="password"
+  DB_USER="root" \
+  DB_PASS="password" 
 
 RUN apk -U upgrade && \ 
   apk add --no-cache bash curl less vim nginx ca-certificates git tzdata zip \

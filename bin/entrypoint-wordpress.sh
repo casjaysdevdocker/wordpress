@@ -1,4 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+DB_HOST="${DB_HOST:-localhost}"
+DB_NAME="${DB_NAME:-wordpress}"
+DB_USER="${DB_USER:-root}"
+DB_PASS="${DB_PASS:-password}"
+
 
 __url_check() {
   curl -q -SIs "http://localhost:80" | grep -qE 'HTTP/[1,2]*' && return 0 || return 1
@@ -43,8 +49,7 @@ if [ "$1" = "healthcheck" ]; then
   __url_check && __file_check && exit 0 || exit 1
 fi
 
-if [ ! -d "/usr/html/wp-admin" ] && [ ! -f "/usr/html/wp-config.php" ]; then
-  echo "[i] Installing wordpress..."
+if [ ! -d "/usr/html/wp-admin" ] && [ ! -f "/usr/html/wp-config.php" ]; then echo "[i] Installing wordpress..."
   cd /tmp || exit 1
   wget https://wordpress.org/latest.tar.gz -O /tmp/latest.tar.gz &&
     tar -xzf /tmp/latest.tar.gz &&
