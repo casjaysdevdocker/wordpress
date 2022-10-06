@@ -1,23 +1,8 @@
-FROM alpine:latest
+FROM casjaysdevdocker/alpine:latest AS build
 
-ARG BUILD_DATE
-ARG VCS_REF
-
-LABEL maintainer="CasjaysDev <docker-admin@casjaysdev.com>" \
-  alpine-version="latest" \
-  nginx-version="latest" \
-  php-version="latest" \
-  wordpress-version="latest" \
-  build="24-June-2022" \
-  org.opencontainers.image.title="alpine-php-wordpress" \
-  org.opencontainers.image.description="Wordpress image running on Alpine Linux" \
-  org.opencontainers.image.authors="CasjaysDev <docker-admin@casjaysdev.com>" \
-  org.opencontainers.image.vendor="CasjaysDev" \
-  org.opencontainers.image.version="latest" \
-  org.opencontainers.image.url="https://hub.docker.com/r/casjaysdev/wordpress/" \
-  org.opencontainers.image.source="https://github.com/casjaysdev/wordpress" \
-  org.opencontainers.image.revision=$VCS_REF \
-  org.opencontainers.image.created=$BUILD_DATE
+ARG BUILD_DATE \
+  VCS_REF \
+  PORT=80 
 
 ENV TERM="xterm" \
   DB_HOST="localhost" \
@@ -55,16 +40,51 @@ RUN /usr/bin/mysql_install_db --user=mysql --datadir=/var/lib/mysql && \
 
 ADD files/nginx.conf /etc/nginx/
 ADD files/php-fpm.conf /etc/php8/
-ADD files/run.sh /usr/local/bin/entrypoint-wordpress.sh
-RUN chmod +x /usr/local/bin/entrypoint-wordpress.sh && \
+
+COPY ./bin /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/* && \
   curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
   chmod +x wp-cli.phar && \
   mv wp-cli.phar /usr/bin/wp-cli && \
   chown nginx:nginx /usr/bin/wp-cli && \
   chown -Rf mysql:mysql /var/lib/mysql /run/mysqld
 
-EXPOSE 80
+FROM scratch
+ARG BUILD_DATE="$(date +'%Y-%m-%d %H:%M')"
+
+LABEL maintainer="CasjaysDev <docker-admin@casjaysdev.com>" \
+  alpine-version="latest" \
+  nginx-version="latest" \
+  php-version="latest" \
+  wordpress-version="latest" \
+  build="24-June-2022" \
+  org.opencontainers.image.title="alpine-php-wordpress" \
+  org.opencontainers.image.description="Wordpress image running on Alpine Linux" \
+  org.opencontainers.image.authors="CasjaysDev <docker-admin@casjaysdev.com>" \
+  org.opencontainers.image.vendor="CasjaysDev" \
+  org.opencontainers.image.version="latest" \
+  org.opencontainers.image.url="https://hub.docker.com/r/casjaysdev/wordpress/" \
+  org.opencontainers.image.source="https://github.com/casjaysdev/wordpress" \
+  org.opencontainers.image.revision=$VCS_REF \
+  org.opencontainers.image.created=$BUILD_DATE
+
+ENV SHELL="/bin/bash" \
+  TERM="xterm-256color" \
+  HOSTNAME="casjaysdev-alpine" \
+  TZ="${TZ:-America/New_York}"
+
+COPY --from=build /. /
+
+WORKDIR /root
+
+VOLUME ["/root","/config","/data"]
+
+EXPOSE $PORT
+
 VOLUME ["/usr/html", "/var/lib/mysql", "/var/lib/wordpress/devel" ]
 
 HEALTHCHECK CMD ["usr/local/bin/entrypoint-wordpress.sh", "healthcheck"]
-ENTRYPOINT ["/usr/local/bin/entrypoint-wordpress.sh"]
+ENTRYPOINT [  "tini", "-p", "SIGTERM", "--" ]
+CMD [ "//usr/local/bin/entrypoint-wordpress.sh" ]
+
