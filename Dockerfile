@@ -2,15 +2,15 @@ FROM casjaysdevdocker/alpine:latest AS build
 
 ARG BUILD_DATE \
   VCS_REF \
-  PORT=80 
+  PORT=80
 
 ENV TERM="xterm" \
-  DB_HOST="localhost" \ 
+  DB_HOST="localhost" \
   DB_NAME="wordpress" \
   DB_USER="root" \
-  DB_PASS="password" 
+  DB_PASS="password"
 
-RUN apk -U upgrade && \ 
+RUN apk -U upgrade && \
   apk add --no-cache bash curl less vim nginx ca-certificates git tzdata zip \
   libmcrypt-dev zlib-dev gmp-dev \
   freetype-dev libjpeg-turbo-dev libpng-dev \
@@ -84,7 +84,7 @@ EXPOSE $PORT
 
 VOLUME ["/usr/html", "/var/lib/mysql", "/var/lib/wordpress/devel" ]
 
-HEALTHCHECK CMD ["usr/local/bin/entrypoint-wordpress.sh", "healthcheck"]
+HEALTHCHECK --interval=15s --timeout=3s CMD ["usr/local/bin/entrypoint-wordpress.sh", "healthcheck"]
 ENTRYPOINT [  "tini", "-p", "SIGTERM", "--" ]
 CMD [ "//usr/local/bin/entrypoint-wordpress.sh" ]
 
