@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-
+# Set bash options
+[ -n "$DEBUG" ] && set -x
+set -o pipefail
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+DB_DIR="${DB_DIR:-/data/mysql/db}"
 DB_HOST="${DB_HOST:-localhost}"
 DB_NAME="${DB_NAME:-wordpress}"
 DB_USER="${DB_USER:-root}"
