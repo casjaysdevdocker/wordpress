@@ -1,90 +1,97 @@
 FROM casjaysdevdocker/alpine:latest AS build
 
-ARG BUILD_DATE \
-  VCS_REF \
-  PORT=80
+ARG ALPINE_VERSION="v3.16"
 
-ENV TERM="xterm" \
-  DB_HOST="localhost" \
-  DB_NAME="wordpress" \
-  DB_USER="root" \
-  DB_PASS="password"
+ARG DEFAULT_DATA_DIR="/usr/local/share/template-files/data" \
+  DEFAULT_CONF_DIR="/usr/local/share/template-files/config" \
+  DEFAULT_TEMPLATE_DIR="/usr/local/share/template-files/defaults"
 
-RUN apk -U upgrade && \
-  apk add --no-cache bash curl less vim nginx ca-certificates git tzdata zip \
-  libmcrypt-dev zlib-dev gmp-dev \
-  freetype-dev libjpeg-turbo-dev libpng-dev \
-  php-fpm php-json php-zlib php-xml php-xmlwriter \
-  php-simplexml php-pdo php-phar php-openssl \
-  php-pdo_mysql php-mysqli php-session \
-  php-gd php-iconv php-gmp php-zip \
-  php-curl php-opcache php-ctype \
-  php-intl php-bcmath php-dom php-mbstring php-xmlreader \
-  mysql-client mysql curl && \
-  apk add -u musl && \
-  rm -rf /var/cache/apk/* && \
-  ln -sf /usr/sbin/php-fpm8 /usr/bin/php-fpm
+ARG PACK_LIST="bash"
 
-RUN /usr/bin/mysql_install_db --user=mysql --datadir=/var/lib/mysql && \
-  sed -i 's|skip-networking|#skip-networking|g' /etc/my.cnf && \
-  sed -i 's|#bind-address=.*|bind-address=127.0.0.1|g' /etc/my.cnf.d/mariadb-server.cnf && \
-  sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /etc/php8/php.ini && \
-  sed -i 's/expose_php = On/expose_php = Off/g' /etc/php8/php.ini && \
-  sed -i "s/nginx:x:100:101:nginx:\/var\/lib\/nginx:\/sbin\/nologin/nginx:x:100:101:nginx:\/usr:\/bin\/bash/g" /etc/passwd && \
-  sed -i "s/nginx:x:100:101:nginx:\/var\/lib\/nginx:\/sbin\/nologin/nginx:x:100:101:nginx:\/usr:\/bin\/bash/g" /etc/passwd- && \
-  echo "mysqld_safe --datadir=/var/lib/mysql --port=3306 &" > /tmp/config && \
-  echo "mysqladmin --silent --wait=30 ping || exit 1" >> /tmp/config && \
-  echo "mysqladmin -u root password 'password'" >> /tmp/config && \
-  bash /tmp/config && \
-  rm -f /tmp/config
+ENV LANG=en_US.UTF-8 \
+  ENV=ENV=~/.bashrc \
+  TZ="America/New_York" \
+  SHELL="/bin/sh" \
+  TERM="xterm-256color" \
+  TIMEZONE="${TZ:-$TIMEZONE}" \
+  HOSTNAME="casjaysdev-wordpress"
 
-ADD ./config/nginx.conf /etc/nginx/
-ADD ./config/php-fpm.conf /etc/php8/
+COPY ./rootfs/. /
 
-COPY ./bin /usr/local/bin/
+RUN set -ex; \
+  rm -Rf "/etc/apk/repositories"; \
+  mkdir -p "${DEFAULT_DATA_DIR}" "${DEFAULT_CONF_DIR}" "${DEFAULT_TEMPLATE_DIR}"; \
+  echo "http://dl-cdn.alpinelinux.org/alpine/${ALPINE_VERSION}/main" >>"/etc/apk/repositories"; \
+  echo "http://dl-cdn.alpinelinux.org/alpine/${ALPINE_VERSION}/community" >>"/etc/apk/repositories"; \
+  if [ "${ALPINE_VERSION}" = "edge" ]; then echo "http://dl-cdn.alpinelinux.org/alpine/${ALPINE_VERSION}/testing" >>"/etc/apk/repositories" ; fi ; \
+  apk update --update-cache && apk add --no-cache ${PACK_LIST} && \
+  echo
 
-RUN chmod +x /usr/local/bin/* && \
-  curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
-  chmod +x wp-cli.phar && \
-  mv wp-cli.phar /usr/bin/wp-cli && \
-  chown nginx:nginx /usr/bin/wp-cli && \
-  chown -Rf mysql:mysql /var/lib/mysql /run/mysqld
+RUN echo 'Running cleanup' ; \
+  rm -Rf /usr/share/doc/* /usr/share/info/* /tmp/* /var/tmp/* ; \
+  rm -Rf /usr/local/bin/.gitkeep /usr/local/bin/.gitkeep /config /data /var/cache/apk/* ; \
+  rm -rf /lib/systemd/system/multi-user.target.wants/* ; \
+  rm -rf /etc/systemd/system/*.wants/* ; \
+  rm -rf /lib/systemd/system/local-fs.target.wants/* ; \
+  rm -rf /lib/systemd/system/sockets.target.wants/*udev* ; \
+  rm -rf /lib/systemd/system/sockets.target.wants/*initctl* ; \
+  rm -rf /lib/systemd/system/sysinit.target.wants/systemd-tmpfiles-setup* ; \
+  rm -rf /lib/systemd/system/systemd-update-utmp* ; \
+  if [ -d "/lib/systemd/system/sysinit.target.wants" ]; then cd "/lib/systemd/system/sysinit.target.wants" && rm $(ls | grep -v systemd-tmpfiles-setup) ; fi
 
 FROM scratch
-ARG BUILD_DATE="$(date +'%Y-%m-%d %H:%M')"
+
+ARG \
+  SERVICE_PORT="80" \
+  EXPOSE_PORTS="80" \
+  PHP_SERVER="wordpress" \
+  NODE_VERSION="system" \
+  NODE_MANAGER="system" \
+  BUILD_VERSION="latest" \
+  LICENSE="MIT" \
+  IMAGE_NAME="wordpress" \
+  BUILD_DATE="Sun Nov 13 12:21:28 PM EST 2022" \
+  TIMEZONE="America/New_York"
 
 LABEL maintainer="CasjaysDev <docker-admin@casjaysdev.com>" \
-  alpine-version="latest" \
-  nginx-version="latest" \
-  php-version="latest" \
-  wordpress-version="latest" \
-  build="24-June-2022" \
-  org.opencontainers.image.title="alpine-php-wordpress" \
-  org.opencontainers.image.description="Wordpress image running on Alpine Linux" \
-  org.opencontainers.image.authors="CasjaysDev <docker-admin@casjaysdev.com>" \
   org.opencontainers.image.vendor="CasjaysDev" \
-  org.opencontainers.image.version="latest" \
-  org.opencontainers.image.url="https://hub.docker.com/r/casjaysdev/wordpress/" \
-  org.opencontainers.image.source="https://github.com/casjaysdev/wordpress" \
-  org.opencontainers.image.revision=$VCS_REF \
-  org.opencontainers.image.created=$BUILD_DATE
+  org.opencontainers.image.authors="CasjaysDev" \
+  org.opencontainers.image.vcs-type="Git" \
+  org.opencontainers.image.name="${IMAGE_NAME}" \
+  org.opencontainers.image.base.name="${IMAGE_NAME}" \
+  org.opencontainers.image.license="${LICENSE}" \
+  org.opencontainers.image.vcs-ref="${BUILD_VERSION}" \
+  org.opencontainers.image.build-date="${BUILD_DATE}" \
+  org.opencontainers.image.version="${BUILD_VERSION}" \
+  org.opencontainers.image.schema-version="${BUILD_VERSION}" \
+  org.opencontainers.image.url="https://hub.docker.com/r/casjaysdevdocker/${IMAGE_NAME}" \
+  org.opencontainers.image.vcs-url="https://github.com/casjaysdevdocker/${IMAGE_NAME}" \
+  org.opencontainers.image.url.source="https://github.com/casjaysdevdocker/${IMAGE_NAME}" \
+  org.opencontainers.image.documentation="https://hub.docker.com/r/casjaysdevdocker/${IMAGE_NAME}" \
+  org.opencontainers.image.description="Containerized version of ${IMAGE_NAME}" \
+  com.github.containers.toolbox="false"
 
-ENV SHELL="/bin/bash" \
+ENV LANG=en_US.UTF-8 \
+  ENV=~/.bashrc \
+  SHELL="/bin/bash" \
+  PORT="${SERVICE_PORT}" \
   TERM="xterm-256color" \
-  HOSTNAME="casjaysdev-alpine" \
-  TZ="${TZ:-America/New_York}"
+  PHP_SERVER="${PHP_SERVER}" \
+  CONTAINER_NAME="${IMAGE_NAME}" \
+  TZ="${TZ:-America/New_York}" \
+  TIMEZONE="${TZ:-$TIMEZONE}" \
+  HOSTNAME="casjaysdev-${IMAGE_NAME}"
 
 COPY --from=build /. /
 
+USER root
 WORKDIR /root
 
-VOLUME ["/root","/config","/data"]
+VOLUME [ "/config","/data" ]
 
-EXPOSE $PORT
+EXPOSE $EXPOSE_PORTS
 
-VOLUME ["/usr/html", "/var/lib/mysql", "/var/lib/wordpress/devel" ]
-
-HEALTHCHECK --interval=15s --timeout=3s CMD ["usr/local/bin/entrypoint-wordpress.sh", "healthcheck"]
-ENTRYPOINT [  "tini", "-p", "SIGTERM", "--" ]
-CMD [ "//usr/local/bin/entrypoint-wordpress.sh" ]
+#CMD [ "" ]
+ENTRYPOINT [ "tini", "-p", "SIGTERM", "--", "/usr/local/bin/entrypoint.sh" ]
+HEALTHCHECK --start-period=1m --interval=2m --timeout=3s CMD [ "/usr/local/bin/entrypoint.sh", "healthcheck" ]
 
