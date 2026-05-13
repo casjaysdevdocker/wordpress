@@ -1,44 +1,79 @@
-# 👋 wordpress Readme 👋
+## 👋 Welcome to wordpress 🚀  
 
-wordpress README
-
-## Run container
-
-### via command line
+wordpress README  
+  
+  
+## Install my system scripts  
 
 ```shell
+ sudo bash -c "$(curl -q -LSsf "https://github.com/systemmgr/installer/raw/main/install.sh")"
+ sudo systemmgr --config && sudo systemmgr install scripts  
+```
+  
+## Automatic install/update  
+  
+```shell
+dockermgr update wordpress
+```
+  
+## Install and run container
+  
+```shell
+dockerHome="/var/lib/srv/$USER/docker/casjaysdevdocker/wordpress/wordpress/latest/rootfs"
+mkdir -p "/var/lib/srv/$USER/docker/wordpress/rootfs"
+git clone "https://github.com/dockermgr/wordpress" "$HOME/.local/share/CasjaysDev/dockermgr/wordpress"
+cp -Rfva "$HOME/.local/share/CasjaysDev/dockermgr/wordpress/rootfs/." "$dockerHome/"
 docker run -d \
 --restart always \
---name wordpress \
+--privileged \
+--name casjaysdevdocker-wordpress-latest \
 --hostname wordpress \
 -e TZ=${TIMEZONE:-America/New_York} \
--v $PWD/wordpress/data:/var/lib/mysql \
--v $PWD/wordpress/config:/usr/html \
--v $PWD/wordpress/devel:/var/lib/wordpress/devel \
--p 8081:80 \
-casjaysdev/wordpress:latest
+-v "$dockerHome/data:/data:z" \
+-v "$dockerHome/config:/config:z" \
+-p 80:80 \
+casjaysdevdocker/wordpress:latest
 ```
-
-### via docker-compose
-
+  
+## via docker-compose  
+  
 ```yaml
 version: "2"
 services:
-  wordpress:
+  ProjectName:
     image: casjaysdevdocker/wordpress
-    container_name: wordpress
+    container_name: casjaysdevdocker-wordpress
     environment:
       - TZ=America/New_York
       - HOSTNAME=wordpress
     volumes:
-      - $HOME/.local/share/docker/storage/wordpress/data:/var/lib/mysql
-      - $HOME/.local/share/docker/storage/wordpress/config:/usr/html
+      - "/var/lib/srv/$USER/docker/casjaysdevdocker/wordpress/wordpress/latest/rootfs/data:/data:z"
+      - "/var/lib/srv/$USER/docker/casjaysdevdocker/wordpress/wordpress/latest/rootfs/config:/config:z"
     ports:
       - 80:80
     restart: always
 ```
-
+  
+## Get source files  
+  
+```shell
+dockermgr download src casjaysdevdocker/wordpress
+```
+  
+OR
+  
+```shell
+git clone "https://github.com/casjaysdevdocker/wordpress" "$HOME/Projects/github/casjaysdevdocker/wordpress"
+```
+  
+## Build container  
+  
+```shell
+cd "$HOME/Projects/github/casjaysdevdocker/wordpress"
+buildx 
+```
+  
 ## Authors  
-
-🤖 Casjay: [Github](https://github.com/casjay) [Docker](https://hub.docker.com/casjay) 🤖  
-⛵ CasjaysDev: [Github](https://github.com/casjaysdev) [Docker](https://hub.docker.com/casjaysdev) ⛵  
+  
+🤖 casjay: [Github](https://github.com/casjay) 🤖  
+⛵ casjaysdevdocker: [Github](https://github.com/casjaysdevdocker) [Docker](https://hub.docker.com/u/casjaysdevdocker) ⛵  
