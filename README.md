@@ -19,8 +19,8 @@ dockermgr update wordpress
 ## Install and run container
   
 ```shell
-dockerHome="/var/lib/srv/$USER/docker/casjaysdevdocker/wordpress/wordpress/latest/rootfs"
-mkdir -p "/var/lib/srv/$USER/docker/wordpress/rootfs"
+dockerHome="/srv/$USER/docker/casjaysdevdocker/wordpress/wordpress/latest/rootfs"
+mkdir -p "/srv/$USER/docker/wordpress/rootfs"
 git clone "https://github.com/dockermgr/wordpress" "$HOME/.local/share/CasjaysDev/dockermgr/wordpress"
 cp -Rfva "$HOME/.local/share/CasjaysDev/dockermgr/wordpress/rootfs/." "$dockerHome/"
 docker run -d \
@@ -47,8 +47,8 @@ services:
       - TZ=America/New_York
       - HOSTNAME=wordpress
     volumes:
-      - "/var/lib/srv/$USER/docker/casjaysdevdocker/wordpress/wordpress/latest/rootfs/data:/data:z"
-      - "/var/lib/srv/$USER/docker/casjaysdevdocker/wordpress/wordpress/latest/rootfs/config:/config:z"
+      - "/srv/$USER/docker/casjaysdevdocker/wordpress/wordpress/latest/rootfs/data:/data:z"
+      - "/srv/$USER/docker/casjaysdevdocker/wordpress/wordpress/latest/rootfs/config:/config:z"
     ports:
       - 80:80
     restart: always
